@@ -1,0 +1,39 @@
+name: Fork HitRate Regression QA
+
+on:
+  push:
+    branches:
+      - qa/hitrate-integration-1960
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hitrate-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out validation branch
+        uses: actions/checkout@v4
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install package and QA tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install 'pytest==7.4.4' 'ruff==0.3.7'
+
+      - name: Ruff lint and format check
+        run: |
+          python -m ruff check src/evidently/legacy/metrics/recsys/hit_rate_k.py tests/metrics/recsys/test_hit_rate_k.py
+          python -m ruff format --check src/evidently/legacy/metrics/recsys/hit_rate_k.py tests/metrics/recsys/test_hit_rate_k.py
+
+      - name: HitRate and neighboring Recall tests
+        run: |
+          python -m pytest -q tests/metrics/recsys/test_hit_rate_k.py tests/metrics/recsys/test_recall_top_k.py --tb=short
