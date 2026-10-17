@@ -62,6 +62,8 @@ class HitRateKMetric(Metric[HitRateKMetricResult]):
         return pd.Series(data=res)
 
     def calculate(self, data: InputData) -> HitRateKMetricResult:
+        if self.k < 1:
+            raise ValueError("k must be a positive integer for HitRate@k")
         curr, ref = get_curr_and_ref_df(data, self.min_rel_score, self.no_feedback_users, True)
         for data_name, frame in (("current", curr), ("reference", ref)):
             if frame is None:

@@ -129,3 +129,21 @@ def test_hit_rate_scalar_value_without_reference():
     result = HitRateKMetricResult(k=2, current=pd.Series([0.1, 0.9]))
     assert result.current_value == pytest.approx(0.9)
     assert result.reference_value is None
+
+
+@pytest.mark.parametrize("k", [0, -1])
+def test_hit_rate_rejects_nonpositive_k(k):
+    current = pd.DataFrame(
+        {
+            "user_id": ["a", "a", "a"],
+            "prediction": [1, 2, 3],
+            "target": [1, 0, 0],
+        }
+    )
+    metric = HitRateKMetric(k=k)
+    report = Report(metrics=[metric])
+    mapping = ColumnMapping(recommendations_type=RecomType.RANK)
+    report.run(reference_data=None, current_data=current, column_mapping=mapping)
+
+    with pytest.raises(ValueError, match="positive integer"):
+        metric.get_result()
