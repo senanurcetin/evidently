@@ -52,6 +52,20 @@ class HitRateKMetric(Metric[HitRateKMetricResult]):
 
     def calculate(self, data: InputData) -> HitRateKMetricResult:
         curr, ref = get_curr_and_ref_df(data, self.min_rel_score, self.no_feedback_users, True)
+        for data_name, frame in (("current", curr), ("reference", ref)):
+            if frame is None:
+                continue
+            highest_rank = frame["preds"].max()
+            if pd.isna(highest_rank):
+                raise ValueError(
+                    f"Cannot calculate top-{self.k} hit rate for {data_name} data: "
+                    "no ranked recommendations are available."
+                )
+            if self.k > highest_rank:
+                raise ValueError(
+                    f"Cannot calculate top-{self.k} hit rate for {data_name} data: "
+                    f"only recommendations through top-{highest_rank} are available."
+                )
         max_k = min(curr["preds"].max(), max(10, self.k))
         current = self.get_values(curr, max_k)
         reference: Optional[pd.Series] = None

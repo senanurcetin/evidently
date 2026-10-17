@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from evidently.legacy.metrics import HitRateKMetric
 from evidently.legacy.pipeline.column_mapping import ColumnMapping
@@ -68,3 +69,20 @@ def test_hit_rate_value_judged_only_scores():
     assert np.isclose(results.current[0], 0.3333333)
     assert np.isclose(results.current[1], 0.3333333)
     assert np.isclose(results.current[2], 0.6666666)
+
+@pytest.mark.parametrize("k", [4, 10])
+def test_hit_rate_rejects_rank_above_available_recommendations(k):
+    current = pd.DataFrame(
+        {
+            "user_id": ["a", "a", "a", "b", "b", "b"],
+            "prediction": [1, 2, 3, 1, 2, 3],
+            "target": [1, 0, 0, 0, 1, 0],
+        }
+    )
+    metric = HitRateKMetric(k=k)
+    report = Report(metrics=[metric])
+    mapping = ColumnMapping(recommendations_type=RecomType.RANK)
+    report.run(reference_data=None, current_data=current, column_mapping=mapping)
+
+    with pytest.raises(ValueError, match=rf"top-{k}.*current.*top-3"):
+        metric.get_result()
