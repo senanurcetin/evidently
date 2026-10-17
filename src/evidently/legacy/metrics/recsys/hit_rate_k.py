@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -8,8 +9,14 @@ from evidently.legacy.base_metric import MetricResult
 from evidently.legacy.calculations.recommender_systems import get_curr_and_ref_df
 from evidently.legacy.core import IncludeTags
 from evidently.legacy.metrics.recsys.base_top_k import TopKMetricRenderer
+from evidently.legacy.model.widget import BaseWidgetInfo
 from evidently.legacy.options.base import AnyOptions
 from evidently.legacy.renderers.base_renderer import default_renderer
+from evidently.legacy.renderers.html_widgets import CounterData
+from evidently.legacy.renderers.html_widgets import counter
+from evidently.legacy.renderers.html_widgets import header_text
+from evidently.legacy.renderers.html_widgets import plotly_figure
+from evidently.legacy.utils.visualizations import plot_metric_k
 
 
 class HitRateKMetricResult(MetricResult):
@@ -91,3 +98,24 @@ class HitRateKMetric(Metric[HitRateKMetricResult]):
 class HitRateKMetricRenderer(TopKMetricRenderer):
     yaxis_name = "HitRate@k"
     header = "Hit Rate"
+
+    def render_html(self, obj: HitRateKMetric) -> List[BaseWidgetInfo]:
+        # Serialized pandas Series may restore rank indexes as strings.
+        # Read the requested rank by position, not by the Series index label.
+        result = obj.get_result()
+        counters = [CounterData.float(label="current", value=result.current_value, precision=3)]
+        if result.reference_value is not None:
+            counters.append(CounterData.float(label="reference", value=result.reference_value, precision=3))
+
+        feedback = (
+            " No feedback users included." if obj.no_feedback_users
+            else " No feedback users excluded."
+        )
+        return [
+            header_text(label=self.header + f" (top-{result.k})." + feedback),
+            counter(counters=counters),
+            plotly_figure(
+                title="",
+                figure=plot_metric_k(result.current, result.reference, self.yaxis_name),
+            ),
+        ]

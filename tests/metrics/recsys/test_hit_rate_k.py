@@ -147,3 +147,26 @@ def test_hit_rate_rejects_nonpositive_k(k):
 
     with pytest.raises(ValueError, match="positive integer"):
         metric.get_result()
+
+def test_hit_rate_snapshot_render_after_loading(tmp_path):
+    # A serialized pandas Series can have string index labels. HTML
+    # rendering must select HitRate@k by position rather than label.
+    current = pd.DataFrame(
+        {
+            "user_id": ["a"] * 12 + ["b"] * 12,
+            "prediction": list(range(1, 13)) * 2,
+            "target": [1] + [0] * 11 + [0] * 11 + [1],
+        }
+    )
+    report = Report(metrics=[HitRateKMetric(k=10)])
+    report.run(
+        reference_data=None,
+        current_data=current,
+        column_mapping=ColumnMapping(recommendations_type=RecomType.RANK),
+    )
+    snapshot = tmp_path / "hit-rate-k10-report.json"
+    report.save(str(snapshot))
+
+    loaded = Report.load(str(snapshot))
+    _, dashboard, _ = loaded._build_dashboard_info()
+    assert dashboard is not None
