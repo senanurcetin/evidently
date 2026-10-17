@@ -107,10 +107,7 @@ class HitRateKMetricRenderer(TopKMetricRenderer):
         if result.reference_value is not None:
             counters.append(CounterData.float(label="reference", value=result.reference_value, precision=3))
 
-        feedback = (
-            " No feedback users included." if obj.no_feedback_users
-            else " No feedback users excluded."
-        )
+        feedback = " No feedback users included." if obj.no_feedback_users else " No feedback users excluded."
         return [
             header_text(label=self.header + f" (top-{result.k})." + feedback),
             counter(counters=counters),

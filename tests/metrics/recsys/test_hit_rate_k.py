@@ -4,9 +4,11 @@ import pytest
 
 from evidently.legacy.metrics import HitRateKMetric
 from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricResult
+from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricRenderer
 from evidently.legacy.pipeline.column_mapping import ColumnMapping
 from evidently.legacy.pipeline.column_mapping import RecomType
 from evidently.legacy.report import Report
+from evidently.legacy.renderers.html_widgets import CounterData
 
 
 def test_hit_rate_value():
@@ -170,3 +172,30 @@ def test_hit_rate_snapshot_render_after_loading(tmp_path):
     loaded = Report.load(str(snapshot))
     _, dashboard, _ = loaded._build_dashboard_info()
     assert dashboard is not None
+
+
+@pytest.mark.parametrize("with_reference", [False, True])
+def test_hit_rate_renderer_selects_rank_after_index_restore(monkeypatch, with_reference):
+    # A string-labeled Series reproduces the post-snapshot indexing failure
+    # even on pandas versions that no longer fall back to positional indexing.
+    current = pd.Series(range(12), index=[str(i) for i in range(12)])
+    reference = pd.Series(range(12), index=[str(i) for i in range(12)]) if with_reference else None
+    result = HitRateKMetricResult(k=10, current=current, reference=reference)
+    metric = HitRateKMetric(k=10)
+    monkeypatch.setattr(metric, "get_result", lambda: result)
+
+    calls = []
+    original_float = CounterData.float
+
+    def capture_float(*, label, value, precision):
+        calls.append((label, value))
+        return original_float(label=label, value=value, precision=precision)
+
+    monkeypatch.setattr(CounterData, "float", staticmethod(capture_float))
+    HitRateKMetricRenderer().render_html(metric)
+
+    assert calls[0] == ("current", 9.0)
+    if with_reference:
+        assert calls[1] == ("reference", 9.0)
+    else:
+        assert len(calls) == 1
