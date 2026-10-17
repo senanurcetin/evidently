@@ -70,6 +70,7 @@ def test_hit_rate_value_judged_only_scores():
     assert np.isclose(results.current[1], 0.3333333)
     assert np.isclose(results.current[2], 0.6666666)
 
+
 @pytest.mark.parametrize("k", [4, 10])
 def test_hit_rate_rejects_rank_above_available_recommendations(k):
     current = pd.DataFrame(
@@ -85,4 +86,28 @@ def test_hit_rate_rejects_rank_above_available_recommendations(k):
     report.run(reference_data=None, current_data=current, column_mapping=mapping)
 
     with pytest.raises(ValueError, match=rf"top-{k}.*current.*top-3"):
+        metric.get_result()
+
+
+def test_hit_rate_rejects_reference_rank_above_available_recommendations():
+    current = pd.DataFrame(
+        {
+            "user_id": ["a", "a", "a", "b", "b", "b"],
+            "prediction": [1, 2, 3, 1, 2, 3],
+            "target": [1, 0, 0, 0, 1, 0],
+        }
+    )
+    reference = pd.DataFrame(
+        {
+            "user_id": ["a", "a", "b", "b"],
+            "prediction": [1, 2, 1, 2],
+            "target": [1, 0, 0, 1],
+        }
+    )
+    metric = HitRateKMetric(k=3)
+    report = Report(metrics=[metric])
+    mapping = ColumnMapping(recommendations_type=RecomType.RANK)
+    report.run(reference_data=reference, current_data=current, column_mapping=mapping)
+
+    with pytest.raises(ValueError, match=r"top-3.*reference.*top-2"):
         metric.get_result()
