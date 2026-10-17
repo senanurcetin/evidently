@@ -31,7 +31,7 @@ jobs:
 
       - name: Ruff diagnostics
         run: |
-          python -m ruff check src/evidently/legacy/metrics/recsys/hit_rate_k.py tests/metrics/recsys/test_hit_rate_k.py || true
+          python -m ruff check --diff src/evidently/legacy/metrics/recsys/hit_rate_k.py tests/metrics/recsys/test_hit_rate_k.py || true
           python -m ruff format --diff src/evidently/legacy/metrics/recsys/hit_rate_k.py tests/metrics/recsys/test_hit_rate_k.py || true
 
       - name: HitRate and neighboring Recall tests
