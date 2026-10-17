@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 
 from evidently.legacy.metrics import HitRateKMetric
-from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricResult
 from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricRenderer
+from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricResult
 from evidently.legacy.pipeline.column_mapping import ColumnMapping
 from evidently.legacy.pipeline.column_mapping import RecomType
 from evidently.legacy.report import Report
@@ -150,6 +150,7 @@ def test_hit_rate_rejects_nonpositive_k(k):
     with pytest.raises(ValueError, match="positive integer"):
         metric.get_result()
 
+
 def test_hit_rate_snapshot_render_after_loading(tmp_path):
     # A serialized pandas Series can have string index labels. HTML
     # rendering must select HitRate@k by position rather than label.
@@ -182,7 +183,7 @@ def test_hit_rate_renderer_selects_rank_after_index_restore(monkeypatch, with_re
     reference = pd.Series(range(12), index=[str(i) for i in range(12)]) if with_reference else None
     result = HitRateKMetricResult(k=10, current=current, reference=reference)
     metric = HitRateKMetric(k=10)
-    monkeypatch.setattr(metric, "get_result", lambda: result)
+    monkeypatch.setattr(HitRateKMetric, "get_result", lambda self: result)
 
     calls = []
     original_float = CounterData.float
