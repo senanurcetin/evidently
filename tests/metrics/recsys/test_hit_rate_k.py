@@ -7,8 +7,8 @@ from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricRenderer
 from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricResult
 from evidently.legacy.pipeline.column_mapping import ColumnMapping
 from evidently.legacy.pipeline.column_mapping import RecomType
-from evidently.legacy.report import Report
 from evidently.legacy.renderers.html_widgets import CounterData
+from evidently.legacy.report import Report
 
 
 def test_hit_rate_value():
