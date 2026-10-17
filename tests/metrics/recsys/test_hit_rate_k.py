@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from evidently.legacy.metrics import HitRateKMetric
+from evidently.legacy.metrics.recsys.hit_rate_k import HitRateKMetricResult
 from evidently.legacy.pipeline.column_mapping import ColumnMapping
 from evidently.legacy.pipeline.column_mapping import RecomType
 from evidently.legacy.report import Report
@@ -111,3 +112,20 @@ def test_hit_rate_rejects_reference_rank_above_available_recommendations():
 
     with pytest.raises(ValueError, match=r"top-3.*reference.*top-2"):
         metric.get_result()
+
+
+def test_hit_rate_scalar_values_use_position_after_index_round_trip():
+    # Index labels may be strings after JSON serialization of a pandas Series.
+    result = HitRateKMetricResult(
+        k=3,
+        current=pd.Series([0.25, 0.5, 0.75], index=["0", "1", "2"]),
+        reference=pd.Series([0.2, 0.4, 0.6], index=["0", "1", "2"]),
+    )
+    assert result.current_value == pytest.approx(0.75)
+    assert result.reference_value == pytest.approx(0.6)
+
+
+def test_hit_rate_scalar_value_without_reference():
+    result = HitRateKMetricResult(k=2, current=pd.Series([0.1, 0.9]))
+    assert result.current_value == pytest.approx(0.9)
+    assert result.reference_value is None

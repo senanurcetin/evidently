@@ -25,6 +25,17 @@ class HitRateKMetricResult(MetricResult):
     current: pd.Series
     reference: Optional[pd.Series] = None
 
+    @property
+    def current_value(self) -> float:
+        # Use positional indexing, including after JSON snapshot restoration.
+        return float(self.current.iloc[self.k - 1])
+
+    @property
+    def reference_value(self) -> Optional[float]:
+        if self.reference is None:
+            return None
+        return float(self.reference.iloc[self.k - 1])
+
 
 class HitRateKMetric(Metric[HitRateKMetricResult]):
     class Config:
