@@ -19,7 +19,9 @@ def test_top_k_metric_result_preserves_valid_rank_values(start_index, k):
 @pytest.mark.parametrize("available", [0, 2])
 def test_top_k_metric_result_rejects_insufficient_current_recommendations(available):
     scores = pd.Series([0.1, 0.2][:available], dtype=float)
-    with pytest.raises(ValueError, match=rf"k=3 recommendations, but current has only {available}"):
+    with pytest.raises(
+        ValueError, match=rf"k=3 recommendations, but current has only {available}"
+    ):
         TopKMetricResult(k=3, current=scores)
 
 
