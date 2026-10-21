@@ -20,6 +20,20 @@ from evidently.legacy.renderers.html_widgets import plotly_figure
 from evidently.legacy.utils.visualizations import plot_metric_k
 
 
+def _top_k_value(values: pd.Series, k: int, dataset: str) -> float:
+    """Look up a top-k score and report an invalid rank as an actionable error."""
+    if k < 1:
+        raise ValueError(f"TopK metric requires a positive k, got k={k}.")
+    if len(values) < k:
+        raise ValueError(
+            f"TopK metric requires k={k} recommendations, but {dataset} has only {len(values)}."
+        )
+    index = k - 1 if isinstance(values, list) or min(values.index) == 0 else k
+    if not isinstance(values, list) and index not in values.index:
+        raise ValueError(f"TopK metric cannot find rank {index} in {dataset} recommendations.")
+    return values[index]
+
+
 class TopKMetricResult(MetricResult):
     class Config:
         type_alias = "evidently:metric_result:TopKMetricResult"
@@ -43,13 +57,16 @@ class TopKMetricResult(MetricResult):
         reference: Optional[pd.Series] = None,
         reference_value: Optional[float] = None,
     ):
-        index = (k - 1) if isinstance(current, list) or min(current.index) == 0 else k
         super().__init__(
             k=k,
             current=current,
-            current_value=current_value if current_value is not None else current[index],
+            current_value=current_value if current_value is not None else _top_k_value(current, k, "current"),
             reference=reference,
-            reference_value=reference_value if reference_value is not None or reference is None else reference[index],
+            reference_value=(
+                reference_value
+                if reference_value is not None or reference is None
+                else _top_k_value(reference, k, "reference")
+            ),
         )
 
 
@@ -96,10 +113,11 @@ class TopKMetricRenderer(MetricRenderer):
     def render_html(self, obj: TopKMetric) -> List[BaseWidgetInfo]:
         metric_result = obj.get_result()
         k = metric_result.k
-        index = (k - 1) if min(metric_result.current.index) == 0 else k
-        counters = [CounterData.float(label="current", value=metric_result.current[index], precision=3)]
+        counters = [CounterData.float(label="current", value=metric_result.current_value, precision=3)]
         if metric_result.reference is not None:
-            counters.append(CounterData.float(label="reference", value=metric_result.reference[index], precision=3))
+            counters.append(
+                CounterData.float(label="reference", value=metric_result.reference_value, precision=3)
+            )
         fig = plot_metric_k(metric_result.current, metric_result.reference, self.yaxis_name)
         header_part = " No feedback users included."
         if not obj.no_feedback_users:
