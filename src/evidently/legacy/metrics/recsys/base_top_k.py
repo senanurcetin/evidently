@@ -60,7 +60,9 @@ class TopKMetricResult(MetricResult):
         super().__init__(
             k=k,
             current=current,
-            current_value=current_value if current_value is not None else _top_k_value(current, k, "current"),
+            current_value=(
+                current_value if current_value is not None else _top_k_value(current, k, "current")
+            ),
             reference=reference,
             reference_value=(
                 reference_value
@@ -115,6 +117,7 @@ class TopKMetricRenderer(MetricRenderer):
         k = metric_result.k
         counters = [CounterData.float(label="current", value=metric_result.current_value, precision=3)]
         if metric_result.reference is not None:
+            assert metric_result.reference_value is not None
             counters.append(
                 CounterData.float(label="reference", value=metric_result.reference_value, precision=3)
             )
