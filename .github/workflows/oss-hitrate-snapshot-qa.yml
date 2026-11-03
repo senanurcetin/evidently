@@ -29,9 +29,9 @@ jobs:
           python -m pip install 'pytest==7.4.4' 'ruff==0.3.7'
           python -c "import pandas; print('QA pandas version:', pandas.__version__)"
 
-      - name: Test HitRate@k and neighboring recommendation metrics
+      - name: Test full legacy recommendation metrics suite
         run: |
-          python -m pytest -q tests/metrics/recsys/test_hit_rate_k.py tests/metrics/recsys/test_recall_top_k.py --tb=short
+          python -m pytest -q tests/metrics/recsys --tb=short
 
       - name: Lint and formatting
         if: always()
