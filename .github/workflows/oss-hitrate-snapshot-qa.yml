@@ -25,8 +25,9 @@ jobs:
 
       - name: Install Evidently and QA tools
         run: |
-          python -m pip install -e .
+          python -m pip install -e . 'pandas>=2.2,<3.0'
           python -m pip install 'pytest==7.4.4' 'ruff==0.3.7'
+          python -c "import pandas; print('QA pandas version:', pandas.__version__)"
 
       - name: Test HitRate@k and neighboring recommendation metrics
         run: |
